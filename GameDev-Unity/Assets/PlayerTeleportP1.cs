@@ -1,5 +1,5 @@
 using UnityEngine;
-
+using UnityEngine.SceneManagement;
 public class PlayerTeleportP1 : MonoBehaviour
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -22,6 +22,8 @@ public class PlayerTeleportP1 : MonoBehaviour
         }
         if(other.gameObject.tag == "Ocean"){
             gameObject.transform.position = new Vector3(51.82f, -0.78f, -50.96f);
+        }if(other.gameObject.tag == "PortalEnd"){
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
         }
     }
 }

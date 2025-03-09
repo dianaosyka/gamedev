@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class FirstPersonMovement : MonoBehaviour
@@ -13,6 +14,7 @@ public class FirstPersonMovement : MonoBehaviour
 
     private Rigidbody rigidbody;
     private Animator animator;
+    public GameObject enemyObject;
 
     /// <summary> Functions to override movement speed. Will use the last added override. </summary>
     public List<System.Func<float>> speedOverrides = new List<System.Func<float>>();
@@ -21,7 +23,7 @@ public class FirstPersonMovement : MonoBehaviour
     {
         // Get the rigidbody on this.
         rigidbody = GetComponent<Rigidbody>();
-        animator = GetComponent<Animator>();
+        animator = GetComponentInChildren<Animator>();
     }
 
     void FixedUpdate()
@@ -34,6 +36,7 @@ public class FirstPersonMovement : MonoBehaviour
         if (speedOverrides.Count > 0)
         {
             targetMovingSpeed = speedOverrides[speedOverrides.Count - 1]();
+            animator.SetTrigger("Run");
         }
 
         // Get targetVelocity from input.
@@ -49,6 +52,26 @@ public class FirstPersonMovement : MonoBehaviour
         if (animator != null)
         {
             animator.SetTrigger("Hit");
+        }
+    }
+    public void TriggerAttackAnimation()
+    {
+        if (animator != null)
+        {
+            animator.SetTrigger("Attack");
+        }
+    }
+
+    internal void Knockback(Vector3 forward, float knockbackForce)
+    {
+        
+        if (enemyObject != null)
+        {
+            Vector3 enemyPosition = enemyObject.transform.position;
+            Vector3 playerPosition = gameObject.transform.position;
+            Vector3 direction = (playerPosition - enemyPosition).normalized; // Calculate the direction from the enemy to the player
+            direction.y = 0; // Ensure movement is only in the x and z directions
+            rigidbody.AddForce(direction * knockbackForce/100, ForceMode.Impulse); // Apply force to the player's Rigidbody
         }
     }
 }

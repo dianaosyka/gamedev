@@ -17,9 +17,10 @@ public class enemyDo : MonoBehaviour
     private bool isPlayerInAttackRange = false;
     private bool isKnockedBack = false;
     private bool isPlayerCloseEnough = false; // New variable to track if the player is close enough
+    private bool isAttacking = false;
+    private bool isDead = false; // New variable to track if the enemy is dead
 
     private Rigidbody rb;
-    private Animator animator;
     private Animator animatorChild;
     private int hp;
     public TextMeshPro hpText;
@@ -28,10 +29,8 @@ public class enemyDo : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        animator = GetComponent<Animator>();
         animatorChild = GetComponentInChildren<Animator>();
         hp = 10;
-        hpText.text = hp + " HP";
         rb.constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ; // Freeze Y position and X, Z rotation
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous; // Prevents tunneling issues
     }
@@ -39,11 +38,13 @@ public class enemyDo : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (isDead) return; // Do nothing if the enemy is dead
+
         float distanceToPlayer = Vector3.Distance(transform.position, player.position);
 
         if (distanceToPlayer <= detectionRange)
         {
-            if(isPlayerInRange == false) animatorChild.SetTrigger("Run");
+            if (isPlayerInRange == false) animatorChild.SetTrigger("Run");
             isPlayerInRange = true;
         }
 
@@ -73,38 +74,55 @@ public class enemyDo : MonoBehaviour
             }
             else
             {
-                AttackPlayer();
+                if (!isAttacking)
+                {
+                    StartCoroutine(AttackPlayer());
+                }
             }
         }
     }
 
     void MoveTowardsPlayer()
     {
-        if (!isKnockedBack) // Only move if not knocked back
-        {
-            Vector3 direction = (player.position - transform.position).normalized;
-            direction.y = 0; // Prevent moving up
-            transform.position += direction * moveSpeed * Time.deltaTime;
-        }
+        if (isDead || isKnockedBack || isAttacking) return; // Do nothing if the enemy is dead, knocked back, or attacking
+
+        Vector3 direction = (player.position - transform.position).normalized;
+        direction.y = 0; // Prevent moving up
+        transform.position += direction * moveSpeed * Time.deltaTime;
     }
 
-    void AttackPlayer()
+    IEnumerator AttackPlayer()
     {
+        if (isDead) yield break; // Do nothing if the enemy is dead
+
+        isAttacking = true;
         // Implement attack logic here
         Debug.Log("Attacking player!");
         FirstPersonMovement playerMovement = player.GetComponent<FirstPersonMovement>();
-        if (playerMovement != null)
+        playerMovement.TriggerHitAnimation();
+        animatorChild.SetTrigger("Attack");
+
+        yield return new WaitForSeconds(0.5f);
+
+        // Check if the player is still within attack range
+        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+        if (distanceToPlayer <= attackRange && playerMovement != null && isPlayerCloseEnough)
         {
-            playerMovement.TriggerHitAnimation();
+            playerMovement.Knockback(transform.position, knockbackForce);
         }
+
+        yield return new WaitForSeconds(0.5f); // Play attack animation for 1 second
+        isAttacking = false;
+        if (!isDead) animatorChild.SetTrigger("Run"); // Switch to Run animation
+
+        yield return new WaitForSeconds(1f); // Wait for 1 second before the next attack
     }
 
     public void Knockback(Vector3 direction, float force)
     {
-        if (!isKnockedBack)
-        {
-            StartCoroutine(ApplyKnockback(direction, force));
-        }
+        if (isDead || isKnockedBack) return; // Do nothing if the enemy is dead or already knocked back
+
+        StartCoroutine(ApplyKnockback(direction, force));
     }
 
     private IEnumerator ApplyKnockback(Vector3 direction, float force)
@@ -115,9 +133,9 @@ public class enemyDo : MonoBehaviour
         rb.AddForce(direction * force, ForceMode.Impulse);
 
         // Trigger the hit reaction animation
-        if (animator != null)
+        if (animatorChild != null)
         {
-            animator.SetTrigger("Hit");
+            animatorChild.SetTrigger("Hit");
         }
 
         yield return new WaitForSeconds(knockbackDuration);
@@ -126,46 +144,45 @@ public class enemyDo : MonoBehaviour
         rb.linearVelocity = Vector3.zero; // Reset velocity after knockback duration
     }
 
-    void OnCollisionEnter(Collision collision)
-    {
-        if (collision.gameObject.CompareTag("Player"))
-        {
-            Vector3 knockbackDirection = (transform.position - collision.transform.position).normalized;
-            float distanceToPlayer = Vector3.Distance(transform.position, player.position);
-            float adjustedKnockbackForce = Mathf.Lerp(knockbackForce, minKnockbackForce, distanceToPlayer / attackRange);
-            Knockback(knockbackDirection, adjustedKnockbackForce);
-
-            // Trigger the hit animation on the player
-            FirstPersonMovement playerMovement = collision.gameObject.GetComponent<FirstPersonMovement>();
-            if (playerMovement != null)
-            {
-                playerMovement.TriggerHitAnimation();
-            }
-        }
-    }
-
     void OnMouseDown()
     {
-        if (isPlayerInAttackRange) // Ensure the enemy is in attack range
-        {
-            Debug.Log("Mouse clicked on enemy");
-            Vector3 knockbackDirection = (transform.position - player.position).normalized;
-            float distanceToPlayer = Vector3.Distance(transform.position, player.position);
-            float adjustedKnockbackForce = Mathf.Lerp(knockbackForce, minKnockbackForce, distanceToPlayer / attackRange);
-            Knockback(knockbackDirection, adjustedKnockbackForce);
-            hp--;
-            hpText.text = hp + " HP";
-            if (hp <= 0)
-            {
-                GameObject door = GameObject.FindWithTag("Door");
-                if (door != null)
-                {
-                    door.transform.Rotate(0, -90, 0);
-                    door.transform.position += new Vector3(0.5f, 0, 0);
-                }
-                Destroy(gameObject);
+        FirstPersonMovement playerMovement = player.GetComponent<FirstPersonMovement>();
+        playerMovement.TriggerAttackAnimation();
 
-            }
+        if (isDead || !isPlayerInAttackRange) return; // Do nothing if the enemy is dead or not in attack range
+
+        Debug.Log("Mouse clicked on enemy");
+        
+        Vector3 knockbackDirection = (transform.position - player.position).normalized;
+        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+        float adjustedKnockbackForce = Mathf.Lerp(knockbackForce, minKnockbackForce, distanceToPlayer / attackRange);
+        Knockback(knockbackDirection, adjustedKnockbackForce);
+        hp--;
+        hpText.text = hp + " HP";
+        if (hp <= 0)
+        {
+            hpText.text = "";
+            Die();
         }
     }
+
+    void Die()
+{
+    isDead = true;
+    animatorChild.SetTrigger("Die"); // Play the Die animation
+    // Additional logic for when the enemy dies (e.g., dropping loot, opening doors, etc.)
+    GameObject door = GameObject.FindWithTag("Door");
+    if (door != null)
+    {
+        door.transform.Rotate(0, -90, 0);
+        door.transform.position += new Vector3(0.5f, 0, 0);
+    }
+    StartCoroutine(DestroyAfterDelay());
+}
+
+IEnumerator DestroyAfterDelay()
+{
+    yield return new WaitForSeconds(1f);
+    Destroy(gameObject);
+}
 }
