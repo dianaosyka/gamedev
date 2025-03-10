@@ -10,6 +10,10 @@ TagManager:
   - enemy
   - Door
   - PortalEnd
+  - Armory
+  - StairsBlock1
+  - Weapon
+  - Shield
   layers:
   - Default
   - TransparentFX

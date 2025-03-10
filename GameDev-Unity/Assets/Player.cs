@@ -1,8 +1,10 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-public class PlayerTeleportP1 : MonoBehaviour
+using TMPro;
+public class Player : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    private bool isGatheredMaterial = false;
+    public TextMeshPro textMaterials;
     void Start()
     {
         
@@ -11,6 +13,11 @@ public class PlayerTeleportP1 : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if(isGatheredMaterial){
+            textMaterials.text = "Materials: 1 hammer, 10 rocks";
+    } else{
+        textMaterials.text = "";
+    }
     }
     void OnTriggerEnter(Collider other){
         if(other.gameObject.tag == "Portal1"){
@@ -25,5 +32,11 @@ public class PlayerTeleportP1 : MonoBehaviour
         }if(other.gameObject.tag == "PortalEnd"){
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
         }
+    }
+    public bool getIsGatheredMaterial(){
+        return isGatheredMaterial;
+    }
+    public void setIsGatheredMaterial(bool isGatheredMaterial){
+        this.isGatheredMaterial = isGatheredMaterial;
     }
 }
