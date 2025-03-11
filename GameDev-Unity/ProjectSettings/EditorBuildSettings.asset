@@ -6,6 +6,12 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/s1.unity
+    guid: 9a9c0bebf86dbd14485b41b39e8bb100
+  - enabled: 1
+    path: Assets/Goblin_Character/Demo_Scene/Goblin- Scene.unity
+    guid: 9dd7677e82945224991bbdc7f4dfc131
+  - enabled: 1
     path: Assets/RPG Tiny Fantasy Forest PBR/Scene/BigIsland.unity
     guid: dc950ffe35d587b4cb76b17b86c42275
   - enabled: 1

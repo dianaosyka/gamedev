@@ -19,17 +19,21 @@ public class Stairs2 : MonoBehaviour
     {
         float distanceToPlayer = Vector3.Distance(transform.position, player.position);
         isReapearingRange = distanceToPlayer < repearingRange;
+
+        if (Input.GetKeyDown(KeyCode.F))
+        {
+            OnKeyPressF();
+        }
     }
 
-    void OnMouseDown()
+    void OnKeyPressF()
     {
-        Debug.Log("OnMouseDown called."); // Log to confirm the method is called
+        Debug.Log("F key pressed."); // Log to confirm the method is called
         if (!isReapearingRange)
         {
             Debug.Log("Player is not in range.");
             return;
         }
-        
 
         // Find the GameObject tagged as "Weapon"
         GameObject weapon = GameObject.FindWithTag("Weapon");

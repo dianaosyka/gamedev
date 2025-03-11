@@ -8,8 +8,16 @@ public class Kamni : MonoBehaviour
 
     void Update()
     {
-        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
-        isReapearingRange = distanceToPlayer < repearingRange;
+        GameObject armory = GameObject.FindWithTag("Armory");
+        if (armory != null)
+        {
+            float distanceToPlayer = Vector3.Distance(armory.transform.position, player.position);
+            isReapearingRange = distanceToPlayer < repearingRange;
+        }
+        else
+        {
+            Debug.LogWarning("No GameObject found with tag 'Armory'.");
+        }
 
         if (Input.GetKeyDown(KeyCode.F))
         {
@@ -27,7 +35,15 @@ public class Kamni : MonoBehaviour
         }
 
         Player playerFile = player.GetComponent<Player>();
-        playerFile.setIsGatheredMaterial(true);
+        if (playerFile != null)
+        {
+            playerFile.setIsGatheredMaterial(true);
+            Debug.Log("Player's material gathered status set to true.");
+        }
+        else
+        {
+            Debug.LogError("Player component not found on the player Transform.");
+        }
 
         // Destroy this GameObject (the cube)
         Destroy(gameObject);
