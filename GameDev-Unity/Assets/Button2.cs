@@ -6,8 +6,8 @@ public class Button2 : MonoBehaviour
 {
     public void Play()
     {
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
         SceneManager.LoadScene(1);
     }
 
